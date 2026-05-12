@@ -1,319 +1,262 @@
 "use client";
 
 import { VESSELS, ANOMALIES, SENSORS, VESSEL_POSITIONS } from "@/lib/data";
-import { severityBg, severityColor, formatTimeAgo, fmtMmsi } from "@/lib/engine";
-import {
-  AlertTriangle,
-  Ship,
-  Antenna,
-  Eye,
-  TrendingUp,
-  Activity,
-} from "lucide-react";
+import { formatTimeAgo, fmtMmsi } from "@/lib/engine";
+import { AlertTriangle, Ship, Antenna, Eye, TrendingUp, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
 
-export function SyntheseView({
-  onJumpToAnomaly,
-}: {
-  onJumpToAnomaly: () => void;
-}) {
+export function SyntheseView({ onJumpToAnomaly }: { onJumpToAnomaly: () => void }) {
   const suspicious = VESSELS.filter((v) => v.isSuspicious);
-  const critical = ANOMALIES.filter((a) => a.severity === "critical");
-  const high = ANOMALIES.filter((a) => a.severity === "high");
-  const aisOff = Object.values(VESSEL_POSITIONS).filter((p) => !p.aisActive).length;
+  const critical    = ANOMALIES.filter((a) => a.severity === "critical");
+  const high        = ANOMALIES.filter((a) => a.severity === "high");
+  const aisOff      = Object.values(VESSEL_POSITIONS).filter((p) => !p.aisActive).length;
+  const confidence  = Math.round(ANOMALIES.reduce((s, a) => s + a.confidence, 0) / ANOMALIES.length * 100);
+
+  const alerts = [...critical, ...high].slice(0, 4);
 
   return (
-    <div className="grid grid-cols-12 gap-4 p-6 bg-grid min-h-[calc(100vh-130px)]">
-      {/* KPI strip */}
-      <div className="col-span-12 grid grid-cols-6 gap-3">
-        <Kpi
-          label="Navires suivis"
-          value={VESSELS.length}
-          unit=""
-          icon={<Ship className="w-4 h-4" />}
-          tone="neutral"
-        />
-        <Kpi
-          label="Capteurs actifs"
-          value={`${SENSORS.filter((s) => s.status === "actif").length}/${SENSORS.length}`}
-          unit=""
-          icon={<Antenna className="w-4 h-4" />}
-          tone="ok"
-        />
-        <Kpi
-          label="AIS désactivés"
-          value={aisOff}
-          unit="navires"
-          icon={<Eye className="w-4 h-4" />}
-          tone={aisOff > 2 ? "warn" : "neutral"}
-        />
-        <Kpi
-          label="Anomalies actives"
-          value={ANOMALIES.length}
-          unit=""
-          icon={<Activity className="w-4 h-4" />}
-          tone="neutral"
-        />
-        <Kpi
-          label="Alertes critiques"
-          value={critical.length}
-          unit=""
-          icon={<AlertTriangle className="w-4 h-4" />}
-          tone="critical"
-        />
-        <Kpi
-          label="Confiance moy."
-          value={Math.round(
-            (ANOMALIES.reduce((s, a) => s + a.confidence, 0) / ANOMALIES.length) *
-              100
-          )}
-          unit="%"
-          icon={<TrendingUp className="w-4 h-4" />}
-          tone="ok"
-        />
+    <div style={{ minHeight: "calc(100vh - 130px)", background: "#F3F4F7", padding: "32px 36px", display: "flex", flexDirection: "column", gap: 28 }}>
+
+      {/* ── KPI strip ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        <KpiCard icon={<Ship size={20} />}          label="Navires suivis"   value={VESSELS.length}                  unit=""       tone="neutral" />
+        <KpiCard icon={<AlertTriangle size={20} />} label="Alertes critiques" value={critical.length}                unit=""       tone="critical" />
+        <KpiCard icon={<Eye size={20} />}           label="AIS désactivés"   value={aisOff}                          unit="navires" tone={aisOff > 2 ? "warn" : "neutral"} />
+        <KpiCard icon={<TrendingUp size={20} />}   label="Confiance moy."   value={confidence}                       unit="%"      tone="ok" />
       </div>
 
-      {/* Alertes prioritaires — focus visuel */}
-      <section className="col-span-8 panel rounded-sm">
-        <div className="px-4 py-3 border-b border-ink-700 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-alert-critical animate-pulse_dot" />
-            <h2 className="font-display text-sm tracking-wide text-steel-100">
-              ALERTES PRIORITAIRES
-            </h2>
-            <span className="label-tag ml-2">
-              {critical.length + high.length} actives
+      {/* ── Rangée principale ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+
+        {/* Alertes */}
+        <div className="panel" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#CE0500", display: "inline-block" }} className="animate-pulse_dot" />
+              <span style={{ fontWeight: 700, fontSize: 13, color: "#1E2232", letterSpacing: "0.02em" }}>
+                Alertes prioritaires
+              </span>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#5C6378", background: "#F3F4F7", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, padding: "2px 8px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                {critical.length + high.length} actives
+              </span>
+            </div>
+            <button onClick={onJumpToAnomaly} style={{ fontSize: 12, color: "#000091", background: "none", border: "none", cursor: "pointer", fontFamily: "Marianne, system-ui, sans-serif", fontWeight: 500 }}>
+              Voir toutes →
+            </button>
+          </div>
+
+          <div>
+            {alerts.map((a, idx) => (
+              <AlertRow key={a.id} anomaly={a} isLast={idx === alerts.length - 1} />
+            ))}
+          </div>
+        </div>
+
+        {/* Bâtiments à surveiller */}
+        <div className="panel" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1E2232" }}>Bâtiments suspects</div>
+            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#5C6378", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {suspicious.length} marqués
+            </div>
+          </div>
+          <div style={{ padding: "8px 0" }}>
+            {suspicious.map((v) => {
+              const pos = VESSEL_POSITIONS[v.mmsi];
+              return (
+                <div key={v.mmsi} style={{ padding: "12px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(198,74,0,0.08)", border: "1.5px solid rgba(198,74,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Ship size={16} color="#C64A00" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1E2232", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {v.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#5C6378", marginTop: 2, display: "flex", gap: 6, alignItems: "center" }}>
+                      <span>{v.flag}</span>
+                      <span style={{ opacity: 0.4 }}>·</span>
+                      <span>{v.type}</span>
+                      {!pos?.aisActive && (
+                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#C64A00", background: "rgba(198,74,0,0.08)", padding: "1px 6px", borderRadius: 4 }}>AIS OFF</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: "#1E2232", fontWeight: 500 }}>{v.freqMean.toFixed(2)}</div>
+                    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#9AA3B5" }}>MHz</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Rangée basse ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+
+        {/* Réseau capteurs */}
+        <div className="panel" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
+            <Antenna size={15} color="#5C6378" />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#1E2232" }}>Réseau de capteurs</span>
+            <span style={{ marginLeft: "auto", fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#5C6378", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {SENSORS.filter(s => s.status === "actif").length}/{SENSORS.length} actifs
             </span>
           </div>
-          <button
-            onClick={onJumpToAnomaly}
-            className="text-xs text-signal hover:text-signal/80 transition"
-          >
-            Voir toutes les anomalies →
-          </button>
-        </div>
-        <div className="divide-y divide-ink-700">
-          {[...critical, ...high].slice(0, 5).map((a) => (
-            <div
-              key={a.id}
-              className={`px-4 py-3 flex items-start gap-3 border-l-2 ${severityBg(
-                a.severity
-              )}`}
-            >
-              <div className="font-mono text-[10px] text-steel-400 w-12 pt-0.5">
-                {formatTimeAgo(a.timestamp)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded-sm border ${severityBg(
-                      a.severity
-                    )} ${severityColor(a.severity)}`}
-                  >
-                    {a.type.toUpperCase()}
-                  </span>
-                  <span className="text-steel-100 text-sm font-medium">
-                    {a.vesselName}
-                  </span>
-                  <span className="text-steel-400 text-xs font-mono">
-                    MMSI {fmtMmsi(a.mmsi)}
-                  </span>
+          <div style={{ padding: "8px 0" }}>
+            {SENSORS.map((s) => (
+              <div key={s.id} style={{ padding: "11px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                <StatusDot state={s.status} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1E2232" }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: "#9AA3B5", marginTop: 2 }}>{s.type}</div>
                 </div>
-                <p className="text-xs text-steel-300 leading-relaxed">
-                  {a.description}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="label-tag">Confiance</div>
-                <div
-                  className={`font-mono text-sm ${severityColor(a.severity)}`}
-                >
-                  {Math.round(a.confidence * 100)}%
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: "#5C6378" }}>{s.rangeKm} km</div>
+                  <div style={{ fontSize: 10, color: s.status === "actif" ? "#18753C" : s.status === "dégradé" ? "#8B5E00" : "#CE0500", fontWeight: 600, marginTop: 2 }}>
+                    {s.status}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Bateaux suspects rapide */}
-      <section className="col-span-4 panel rounded-sm">
-        <div className="px-4 py-3 border-b border-ink-700">
-          <h2 className="font-display text-sm tracking-wide text-steel-100">
-            BÂTIMENTS À SURVEILLER
-          </h2>
-          <div className="label-tag mt-0.5">
-            {suspicious.length} marqués suspects
+            ))}
           </div>
         </div>
-        <div className="divide-y divide-ink-700">
-          {suspicious.map((v) => {
-            const pos = VESSEL_POSITIONS[v.mmsi];
-            return (
-              <div key={v.mmsi} className="px-4 py-2.5 flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-alert-high animate-pulse_dot" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-steel-100 truncate">
-                    {v.name}
-                  </div>
-                  <div className="text-[11px] font-mono text-steel-400 flex gap-2">
-                    <span>{v.flag}</span>
-                    <span>·</span>
-                    <span>{v.type}</span>
-                    {!pos?.aisActive && (
-                      <>
-                        <span>·</span>
-                        <span className="text-alert-high">AIS OFF</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right text-[11px] font-mono">
-                  <div className="text-steel-300">
-                    {v.freqMean.toFixed(2)} MHz
-                  </div>
-                  <div className="text-steel-400">
-                    σ {v.freqStd.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
-      {/* État des capteurs */}
-      <section className="col-span-6 panel rounded-sm">
-        <div className="px-4 py-3 border-b border-ink-700">
-          <h2 className="font-display text-sm tracking-wide text-steel-100">
-            RÉSEAU DE CAPTEURS
-          </h2>
-          <div className="label-tag mt-0.5">Couverture Méditerranée occidentale</div>
+        {/* Activité RF */}
+        <div className="panel" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
+            <Activity size={15} color="#5C6378" />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#1E2232" }}>Activité RF — 24 h</span>
+          </div>
+          <div style={{ padding: "20px 24px" }}>
+            <ActivityBars />
+          </div>
         </div>
-        <table className="w-full text-xs">
-          <thead className="text-steel-400">
-            <tr className="border-b border-ink-700">
-              <th className="text-left px-4 py-2 font-mono font-normal label-tag">
-                ID
-              </th>
-              <th className="text-left px-2 py-2 font-mono font-normal label-tag">
-                Nom
-              </th>
-              <th className="text-left px-2 py-2 font-mono font-normal label-tag">
-                Type
-              </th>
-              <th className="text-right px-2 py-2 font-mono font-normal label-tag">
-                Portée
-              </th>
-              <th className="text-right px-4 py-2 font-mono font-normal label-tag">
-                État
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {SENSORS.map((s) => (
-              <tr key={s.id} className="border-b border-ink-700/50">
-                <td className="px-4 py-2 font-mono text-steel-300">{s.id}</td>
-                <td className="px-2 py-2 text-steel-200">{s.name}</td>
-                <td className="px-2 py-2 text-steel-400">{s.type}</td>
-                <td className="px-2 py-2 text-right font-mono text-steel-300">
-                  {s.rangeKm} km
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <SensorState state={s.status} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Activité 24h */}
-      <section className="col-span-6 panel rounded-sm scanline">
-        <div className="px-4 py-3 border-b border-ink-700">
-          <h2 className="font-display text-sm tracking-wide text-steel-100">
-            ACTIVITÉ RF — DERNIÈRES 24H
-          </h2>
-        </div>
-        <div className="p-4">
-          <ActivityBars />
-        </div>
-      </section>
+      </div>
     </div>
   );
 }
 
-function Kpi({
-  label,
-  value,
-  unit,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-  icon: React.ReactNode;
+/* ── Sous-composants ──────────────────────────────────────────────────────── */
+
+const SEV_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  critical: { bg: "rgba(206,5,0,0.04)",   border: "rgba(206,5,0,0.15)",   text: "#CE0500", dot: "#CE0500" },
+  high:     { bg: "rgba(198,74,0,0.04)",  border: "rgba(198,74,0,0.15)",  text: "#C64A00", dot: "#C64A00" },
+  medium:   { bg: "rgba(139,94,0,0.04)",  border: "rgba(139,94,0,0.15)",  text: "#8B5E00", dot: "#8B5E00" },
+  low:      { bg: "rgba(24,117,60,0.04)", border: "rgba(24,117,60,0.15)", text: "#18753C", dot: "#18753C" },
+};
+
+function AlertRow({ anomaly: a, isLast }: { anomaly: (typeof ANOMALIES)[0]; isLast: boolean }) {
+  const c = SEV_COLORS[a.severity] ?? SEV_COLORS.low;
+  return (
+    <div style={{
+      padding: "16px 24px",
+      display: "flex", alignItems: "flex-start", gap: 16,
+      borderBottom: isLast ? "none" : "1px solid rgba(0,0,0,0.05)",
+      borderLeft: `3px solid ${c.dot}`,
+    }}>
+      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#9AA3B5", marginTop: 3, minWidth: 28 }}>
+        {formatTimeAgo(a.timestamp)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+          <span style={{
+            fontFamily: "JetBrains Mono, monospace", fontSize: 9, fontWeight: 700,
+            padding: "2px 7px", borderRadius: 5,
+            background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+          }}>
+            {a.type}
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#1E2232" }}>{a.vesselName}</span>
+          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "#9AA3B5" }}>
+            {fmtMmsi(a.mmsi)}
+          </span>
+        </div>
+        <p style={{ fontSize: 12, color: "#5C6378", lineHeight: 1.6, margin: 0 }}>{a.description}</p>
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 18, fontWeight: 700, color: c.text, lineHeight: 1 }}>
+          {Math.round(a.confidence * 100)}%
+        </div>
+        <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, color: "#9AA3B5", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          confiance
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusDot({ state }: { state: string }) {
+  const color = state === "actif" ? "#18753C" : state === "dégradé" ? "#8B5E00" : "#CE0500";
+  const bg    = state === "actif" ? "rgba(24,117,60,0.12)" : state === "dégradé" ? "rgba(139,94,0,0.12)" : "rgba(206,5,0,0.12)";
+  return (
+    <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: 8, height: 8, borderRadius: "50%", background: color }} className={state === "actif" ? "animate-pulse_dot" : ""} />
+    </div>
+  );
+}
+
+function KpiCard({ icon, label, value, unit, tone }: {
+  icon: React.ReactNode; label: string; value: number | string; unit?: string;
   tone: "neutral" | "ok" | "warn" | "critical";
 }) {
-  const accent = {
-    neutral: "text-steel-100",
-    ok: "text-alert-nominal",
-    warn: "text-alert-medium",
-    critical: "text-alert-critical",
-  }[tone];
+  const accent = { neutral: "#1E2232", ok: "#18753C", warn: "#C64A00", critical: "#CE0500" }[tone];
+  const iconBg = { neutral: "rgba(30,34,50,0.06)", ok: "rgba(24,117,60,0.08)", warn: "rgba(198,74,0,0.08)", critical: "rgba(206,5,0,0.08)" }[tone];
+
   return (
-    <div className="panel rounded-sm px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="label-tag">{label}</span>
-        <span className={`${accent} opacity-70`}>{icon}</span>
+    <div className="panel" style={{ padding: "22px 24px", display: "flex", alignItems: "flex-start", gap: 16 }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: accent }}>
+        {icon}
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className={`font-display text-2xl tabular-nums ${accent}`}>
-          {value}
-        </span>
-        {unit && <span className="text-[11px] text-steel-400">{unit}</span>}
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: "#9AA3B5", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+          {label}
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 30, fontWeight: 700, color: accent, lineHeight: 1 }}>
+            {value}
+          </span>
+          {unit && <span style={{ fontSize: 12, color: "#9AA3B5" }}>{unit}</span>}
+        </div>
       </div>
     </div>
-  );
-}
-
-function SensorState({ state }: { state: string }) {
-  const cfg =
-    state === "actif"
-      ? { color: "text-alert-nominal", dot: "bg-alert-nominal" }
-      : state === "dégradé"
-      ? { color: "text-alert-medium", dot: "bg-alert-medium" }
-      : { color: "text-alert-critical", dot: "bg-alert-critical" };
-  return (
-    <span className={`inline-flex items-center gap-1.5 ${cfg.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {state}
-    </span>
   );
 }
 
 function ActivityBars() {
-  // 24 barres pour 24h, intensité simulée
-  const data = Array.from({ length: 24 }, (_, i) => {
-    const base = 30 + Math.sin(i / 4) * 20 + Math.random() * 25;
-    const spike = i === 14 || i === 19 ? 35 : 0;
-    return Math.min(100, base + spike);
-  });
+  const [data, setData] = useState<number[]>([]);
+
+  useEffect(() => {
+    setData(
+      Array.from({ length: 24 }, (_, i) => {
+        const base = 30 + Math.sin(i / 4) * 20 + Math.random() * 25;
+        const spike = i === 14 || i === 19 ? 35 : 0;
+        return Math.min(100, base + spike);
+      })
+    );
+  }, []);
+
+  if (!data.length) return <div style={{ height: 140 }} />;
+
   return (
-    <div className="flex items-end gap-1 h-32">
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 140 }}>
       {data.map((v, i) => {
         const isSpike = v > 80;
         return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <div
-              className={`w-full rounded-t-sm ${
-                isSpike ? "bg-alert-high" : "bg-signal/60"
-              }`}
-              style={{ height: `${v}%` }}
-            />
-            <span className="text-[9px] font-mono text-steel-400">
-              {i.toString().padStart(2, "0")}
-            </span>
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{
+              width: "100%", borderRadius: "4px 4px 0 0",
+              background: isSpike ? "rgba(198,74,0,0.75)" : "rgba(0,0,145,0.3)",
+              height: `${v}%`,
+              transition: "height 0.4s",
+            }} />
+            {(i % 4 === 0) && (
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 8, color: "#9AA3B5" }}>
+                {i.toString().padStart(2, "0")}h
+              </span>
+            )}
           </div>
         );
       })}

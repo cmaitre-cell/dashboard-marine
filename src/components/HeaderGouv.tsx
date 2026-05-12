@@ -24,7 +24,7 @@ export function HeaderGouv({
     <header style={{ background: "#fff", boxShadow: "0 1px 0 #D0D3D9, 0 2px 12px rgba(0,0,0,0.06)" }}>
 
       {/* ── TIER 1 — République Française / Ministère des Armées ─────────── */}
-      <div style={{ background: "linear-gradient(135deg, #1B4FCC 0%, #1040B0 100%)" }}>
+      <div style={{ background: "#111111" }}>
         <div style={{ maxWidth: 1600, margin: "0 auto", padding: "10px 28px", display: "flex", alignItems: "center", gap: 20 }}>
 
           {/* Bloc République Française */}
