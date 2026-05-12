@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Polices ─────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* ── DSFR CSS variables ─────────────────────────────────────────────────── */
+:root {
+  --blue:      #000091;
+  --blue-h:    #1212CC;
+  --red:       #E1000F;
+  --text:      #11142B;
+  --text-m:    #636878;
+  --bg:        #ffffff;
+  --bg-alt:    #F4F5F7;
+  --border:    #D0D3D9;
+  --radius:    10px;
+  --radius-sm: 8px;
+}
+
+/* ── Reset & base ────────────────────────────────────────────────────────── */
+html, body {
+  background: var(--bg-alt);
+  color: var(--text);
+  font-family: "Marianne", "IBM Plex Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Scrollbar raffinée ──────────────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: #C8CDD6 #F4F5F7; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: #F4F5F7; }
+*::-webkit-scrollbar-thumb { background: #C8CDD6; border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: #A0A7B5; }
+
+/* ── Grille de fond institutionnelle ─────────────────────────────────────── */
+.bg-grid {
+  background-color: #F4F5F7;
+  background-image:
+    linear-gradient(rgba(0,0,145,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,145,0.04) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* ── Panneau — carte principale DSFR ────────────────────────────────────── */
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.panel:has(table) { border-radius: var(--radius); overflow: hidden; }
+
+.panel-elevated {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+/* ── Label mono — étiquette technique ───────────────────────────────────── */
+.label-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-m);
+  font-weight: 500;
+}
+
+/* ── Bannière tricolore DSFR ─────────────────────────────────────────────── */
+.classification-banner {
+  background: linear-gradient(90deg, #002395 33.33%, #fff 33.33% 66.66%, #ED2939 66.66%);
+}
+
+/* ── Scan animation graphiques ───────────────────────────────────────────── */
+.scanline { position: relative; overflow: hidden; }
+.scanline::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,145,0.025) 50%, transparent 100%);
+  pointer-events: none;
+  animation: scan 5s linear infinite;
+}
+
+/* ── Boutons DSFR ───────────────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 20px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px; font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--blue);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,145,0.25);
+}
+.btn-primary:hover {
+  background: var(--blue-h);
+  border-color: var(--blue-h);
+  box-shadow: 0 4px 16px rgba(0,0,145,0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 20px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.btn-secondary:hover {
+  background: #F4F5F7;
+  border-color: #A0A7B5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+/* ── Chips de sévérité ───────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* ── Inputs modernisés ───────────────────────────────────────────────────── */
+input[type="number"], select {
+  border-radius: var(--radius-sm) !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+input[type="number"]:focus, select:focus {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px rgba(0,0,145,0.12) !important;
+  outline: none !important;
+}
+
+/* ── Leaflet ─────────────────────────────────────────────────────────────── */
+.leaflet-container { background: #dce8f0 !important; }
+.leaflet-mode-tactique .leaflet-tile { filter: saturate(0.65) brightness(1.05) contrast(1.02); }
+.leaflet-mode-maritime,
+.leaflet-mode-alertes { background: #071a2e !important; }
+
+/* Contrôles Leaflet — thème clair */
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.92) !important;
+  color: #454C5C !important; font-size: 10px !important;
+  border-radius: 8px 0 0 0 !important;
+  border: 1px solid #D0D3D9 !important; border-right: none !important; border-bottom: none !important;
+}
+.leaflet-control-attribution a { color: #000091 !important; }
+.leaflet-control-zoom {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  border: 1px solid #D0D3D9 !important;
+}
+.leaflet-control-zoom a {
+  background: #fff !important; color: #11142B !important;
+  border: none !important; border-bottom: 1px solid #E8EAED !important;
+  font-size: 16px !important; width: 30px !important; height: 30px !important;
+  line-height: 30px !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+.leaflet-control-zoom a:hover { background: #F4F5F7 !important; color: #000091 !important; }
+.leaflet-control-zoom-in { border-bottom: 1px solid #E8EAED !important; }
+.leaflet-control-zoom-out { border-bottom: none !important; }
+
+/* Contrôles mode maritime */
+.leaflet-mode-maritime .leaflet-control-attribution,
+.leaflet-mode-alertes .leaflet-control-attribution {
+  background: rgba(7,26,46,0.85) !important; color: #b0bec5 !important;
+}
+.leaflet-mode-maritime .leaflet-control-attribution a,
+.leaflet-mode-alertes .leaflet-control-attribution a { color: #64B5F6 !important; }
+.leaflet-mode-maritime .leaflet-control-zoom,
+.leaflet-mode-alertes .leaflet-control-zoom {
+  border-color: #1e3a5f !important;
+}
+.leaflet-mode-maritime .leaflet-control-zoom a,
+.leaflet-mode-alertes .leaflet-control-zoom a {
+  background: #0d2340 !important; color: #c8d6e8 !important;
+  border-color: #1e3a5f !important;
+}
+.leaflet-mode-maritime .leaflet-control-zoom a:hover,
+.leaflet-mode-alertes .leaflet-control-zoom a:hover {
+  background: #1e3a5f !important; color: #fff !important;
+}
